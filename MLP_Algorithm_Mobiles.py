@@ -4,7 +4,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
@@ -23,30 +22,22 @@ raw_data = pd.read_csv(csv_file)
 data_file = raw_data[used_columns]
 
 scaler = MinMaxScaler()
-
 data_X = data_file.iloc[:, :-1]
 data_X = pd.DataFrame(scaler.fit_transform(data_X), columns=data_X.columns)
 
 data_Y = data_file.iloc[:, -1]
 data_Y = data_Y.replace({0: 0, 1: 0, 2: 1, 3: 1}) # Price range column now contains binary indicator of whether phone is high price or low price.
 
-print(data_X)
-print(data_Y)
-
 data_X = data_X.to_numpy()
 data_Y = data_Y.to_numpy()
 
 X_train, X_test, y_train, y_test = train_test_split(data_X, data_Y, test_size=0.2, random_state=42)
-print("\n\n\n\n")
-print(type(X_train))
-print(X_train)
 
 # Convert to PyTorch tensors
 X_train = torch.FloatTensor(X_train)
 y_train = torch.LongTensor(y_train)
 X_test = torch.FloatTensor(X_test)
 y_test = torch.LongTensor(y_test)
-
 
 class MLP(nn.Module):
     def __init__(self):
@@ -93,7 +84,6 @@ for epoch in range(num_epochs):
 
     if (epoch + 1) % 100 == 0:
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
-
 
 
 plt.plot(range(1, len(train_accuracies) + 1), train_accuracies, label='Training Accuracy')
