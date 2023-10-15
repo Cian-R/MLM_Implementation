@@ -8,7 +8,6 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
-from mlxtend.plotting import plot_decision_regions
 
 seed = 12443
 random.seed(seed)
