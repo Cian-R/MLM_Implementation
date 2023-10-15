@@ -10,7 +10,7 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns
 from mlxtend.plotting import plot_decision_regions
 
-seed = 124431111
+seed = 12443
 random.seed(seed)
 np.random.seed(seed)
 torch.manual_seed(seed)
