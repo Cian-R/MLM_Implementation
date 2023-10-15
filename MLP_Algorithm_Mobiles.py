@@ -1,3 +1,4 @@
+import pandas as pd
 import random
 import numpy as np
 import torch
@@ -5,20 +6,40 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
-seed = 12443
+seed = 4211
 random.seed(seed)
 np.random.seed(seed)
 torch.manual_seed(seed)
 
-iris = load_iris()
-X = iris.data[:100, :2]  # Select the first two features
-y = iris.target[:100]    # Labels (0 for setosa, 1 for versicolor)
+csv_file = 'data/data.csv'
+used_columns = ["battery_power", "int_memory", "n_cores", "ram", "price_range"]
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+raw_data = pd.read_csv(csv_file)
+data_file = raw_data[used_columns]
+
+scaler = MinMaxScaler()
+
+data_X = data_file.iloc[:, :-1]
+data_X = pd.DataFrame(scaler.fit_transform(data_X), columns=data_X.columns)
+
+data_Y = data_file.iloc[:, -1]
+data_Y = data_Y.replace({0: 0, 1: 0, 2: 1, 3: 1}) # Price range column now contains binary indicator of whether phone is high price or low price.
+
+print(data_X)
+print(data_Y)
+
+data_X = data_X.to_numpy()
+data_Y = data_Y.to_numpy()
+
+X_train, X_test, y_train, y_test = train_test_split(data_X, data_Y, test_size=0.2, random_state=42)
+print("\n\n\n\n")
+print(type(X_train))
+print(X_train)
 
 # Convert to PyTorch tensors
 X_train = torch.FloatTensor(X_train)
@@ -27,44 +48,14 @@ X_test = torch.FloatTensor(X_test)
 y_test = torch.LongTensor(y_test)
 
 
-# Define a custom plotting function
-def plot_decision_boundary(X, y, model, ax=None):
-    if ax is None:
-        ax = plt.gca()
-
-    h = .02  # Step size in the mesh
-    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-
-    grid_points = torch.FloatTensor(np.c_[xx.ravel(), yy.ravel()])
-    Z = model(grid_points).detach().numpy()
-    
-    if len(Z[0]) == 2:
-        # For binary classification, create a single decision boundary line
-        decision_boundary = Z[:, 1] - Z[:, 0]  # Assuming class 1 is the positive class
-        decision_boundary = decision_boundary.reshape(xx.shape)
-        ax.contour(xx, yy, decision_boundary, colors='k', levels=[0], linestyles='solid')
-    else:
-        # For multi-class classification, create separate decision boundary lines for each class
-        for i in range(len(Z[0])):
-            class_region = Z[:, i].reshape(xx.shape)
-            ax.contour(xx, yy, class_region, colors='k', levels=[0], linestyles='solid')
-    
-    ax.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Paired)
-    ax.set_xlabel('Feature 1')
-    ax.set_ylabel('Feature 2')
-
-
-
 class MLP(nn.Module):
     def __init__(self):
         super(MLP, self).__init__()
-        self.fc1 = nn.Linear(2, 4)  # Input layer to first hidden layer
+        self.fc1 = nn.Linear(4, 8)  # Input layer to first hidden layer
         self.relu1 = nn.ReLU()      # First ReLU activation function
-        self.fc2 = nn.Linear(4, 4)  # First hidden layer to second hidden layer
+        self.fc2 = nn.Linear(8, 8)  # First hidden layer to second hidden layer
         self.relu2 = nn.ReLU()      # Second ReLU activation function
-        self.fc3 = nn.Linear(4, 2)  # Second hidden layer to output layer
+        self.fc3 = nn.Linear(8, 2)  # Second hidden layer to output layer
 
     def forward(self, x):
         x = self.fc1(x)
@@ -83,7 +74,7 @@ train_losses = []  # For storing training loss over epochs
 train_accuracies = []  # For storing training accuracy over epochs
 val_accuracies = []  # For storing validation accuracy over epochs
 
-num_epochs = 1000
+num_epochs = 3000
 for epoch in range(num_epochs):
     # Forward pass
     outputs = model(X_train)
@@ -125,11 +116,6 @@ sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
 plt.xlabel('Predicted Labels')
 plt.ylabel('True Labels')
 plt.title('Confusion Matrix')
-plt.show()
-
-# Usage
-plot_decision_boundary(X_train, y_train, model)
-plt.title('Decision Boundary')
 plt.show()
 
 
